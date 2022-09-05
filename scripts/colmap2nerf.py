@@ -32,15 +32,15 @@ def parse_args():
     parser.add_argument("--run_colmap", default=True, action="store_true",
                         help="run colmap first on the image folder")
     parser.add_argument("--colmap_matcher", default="exhaustive", choices=["exhaustive", "sequential", "spatial", "transitive",
-                        "vocab_tree"], help="select which matcher colmap should use. sequential for videos, exhaustive for adhoc images")
+                                                                           "vocab_tree"], help="select which matcher colmap should use. sequential for videos, exhaustive for adhoc images")
     parser.add_argument("--colmap_db", default="colmap.db",
                         help="colmap database filename")
     parser.add_argument("--colmap_camera_model", default="OPENCV", choices=[
-                        "SIMPLE_PINHOLE", "PINHOLE", "SIMPLE_RADIAL", "RADIAL", "OPENCV"], help="camera model")
+        "SIMPLE_PINHOLE", "PINHOLE", "SIMPLE_RADIAL", "RADIAL", "OPENCV"], help="camera model")
     parser.add_argument("--colmap_camera_params", default="",
                         help="intrinsic parameters, depending on the chosen model.  Format: fx,fy,cx,cy,dist")
     parser.add_argument("--images", default="images",
-                        help="input path to the images")
+                                            help="input path to the images")
     parser.add_argument("--text", default="colmap_text",
                         help="input path to the colmap text files (set automatically if run_colmap is used)")
     parser.add_argument("--aabb_scale", default=16, choices=["1", "2", "4", "8", "16"],
@@ -143,10 +143,10 @@ def sharpness(imagePath):
 def qvec2rotmat(qvec):
     return np.array([
         [
-                    1 - 2 * qvec[2]**2 - 2 * qvec[3]**2,
-                    2 * qvec[1] * qvec[2] - 2 * qvec[0] * qvec[3],
-                    2 * qvec[3] * qvec[1] + 2 * qvec[0] * qvec[2]
-                    ], [
+            1 - 2 * qvec[2]**2 - 2 * qvec[3]**2,
+            2 * qvec[1] * qvec[2] - 2 * qvec[0] * qvec[3],
+            2 * qvec[3] * qvec[1] + 2 * qvec[0] * qvec[2]
+        ], [
             2 * qvec[1] * qvec[2] + 2 * qvec[0] * qvec[3],
             1 - 2 * qvec[1]**2 - 2 * qvec[3]**2,
             2 * qvec[2] * qvec[3] - 2 * qvec[0] * qvec[1]
@@ -283,7 +283,7 @@ if __name__ == "__main__":
             if i % 2 == 1:
                 # 1-4 is quat, 5-7 is trans, 9ff is filename (9, if filename contains no spaces)
                 elems = line.split(" ")
-                #name = str(PurePosixPath(Path(IMAGE_FOLDER, elems[9])))
+                # name = str(PurePosixPath(Path(IMAGE_FOLDER, elems[9])))
                 # why is this requireing a relitive path while using ^
                 image_rel = os.path.relpath(IMAGE_FOLDER)
                 name = str(f"./{image_rel}/{'_'.join(elems[9:])}")
@@ -328,29 +328,28 @@ if __name__ == "__main__":
         R = rotmat(up, [0, 0, 1])  # rotate up vector to [0,0,1]
         R = np.pad(R, [0, 1])
         R[-1, -1] = 1
-
         for f in out["frames"]:
             f["transform_matrix"] = np.matmul(
                 R, f["transform_matrix"])  # rotate up to be the z axis
 
-            # find a central point they are all looking at
-            print("computing center of attention...")
-             totw = 0.0
-              totp = np.array([0.0, 0.0, 0.0])
-               for f in out["frames"]:
-                    mf = f["transform_matrix"][0:3, :]
-                    for g in out["frames"]:
-                        mg = g["transform_matrix"][0:3, :]
-                        p, w = closest_point_2_lines(
-                            mf[:, 3], mf[:, 2], mg[:, 3], mg[:, 2])
-                        if w > 0.00001:
-                            totp += p*w
-                            totw += w
-                if totw > 0.0:
-                    totp /= totw
-                print(totp)  # the cameras are looking at totp
-                for f in out["frames"]:
-                    f["transform_matrix"][0:3, 3] -= totp
+        # find a central point they are all looking at
+        print("computing center of attention...")
+        totw = 0.0
+        totp = np.array([0.0, 0.0, 0.0])
+        for f in out["frames"]:
+            mf = f["transform_matrix"][0:3, :]
+            for g in out["frames"]:
+                mg = g["transform_matrix"][0:3, :]
+                p, w = closest_point_2_lines(
+                    mf[:, 3], mf[:, 2], mg[:, 3], mg[:, 2])
+                if w > 0.00001:
+                    totp += p*w
+                    totw += w
+        if totw > 0.0:
+            totp /= totw
+        print(totp)  # the cameras are looking at totp
+        for f in out["frames"]:
+            f["transform_matrix"][0:3, 3] -= totp
 
         avglen = 0.
         for f in out["frames"]:
